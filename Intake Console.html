@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PayComp · Intake Console</title>
+<style>
+:root{--navy:#16306b;--blue:#2b6cb0;--orange:#f5821f;--bg:#f4f6fb;--card:#fff;
+--line:#e3e8f0;--text:#1f2a44;--muted:#8a93a8;--ok:#1f9d57;--err:#d64545;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+background:var(--bg);color:var(--text);line-height:1.5;}
+a{color:var(--blue);text-decoration:none;}
+.muted{color:var(--muted);}
+.topbar{background:var(--navy);color:#fff;padding:14px 24px;display:flex;align-items:center;gap:10px;}
+.logo{font-weight:800;font-size:20px;letter-spacing:-.5px;}
+.logo .o{color:var(--orange);}
+.tag{font-size:12px;color:#acc1e6;margin-left:4px;}
+.wrap{max-width:1040px;margin:0 auto;padding:24px;}
+.cols{display:grid;grid-template-columns:340px 1fr;gap:22px;align-items:start;}
+@media(max-width:860px){.cols{grid-template-columns:1fr;}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;
+box-shadow:0 4px 14px rgba(20,40,90,.05);padding:18px;}
+.panel h2{margin:0 0 12px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--navy);}
+label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.4px;}
+input,select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:14px;
+font-family:inherit;background:#fff;color:var(--text);}
+input:focus,select:focus{outline:none;border-color:var(--blue);}
+.hint{font-size:11px;color:var(--muted);margin-top:5px;}
+.drop{margin-top:6px;border:2px dashed #c4d0e6;border-radius:14px;background:#fbfcfe;
+padding:34px 18px;text-align:center;cursor:pointer;transition:.12s;}
+.drop:hover{border-color:var(--blue);background:#f5f9ff;}
+.drop.over{border-color:var(--orange);background:#fff7ef;transform:scale(1.01);}
+.drop .ic{font-size:34px;}
+.drop .big{font-weight:700;color:var(--navy);margin-top:6px;}
+.drop .sm{font-size:12px;color:var(--muted);margin-top:3px;}
+.status{margin-top:14px;font-size:13px;min-height:20px;}
+.status .spin{display:inline-block;width:13px;height:13px;border:2px solid #cdd7ea;
+border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:7px;}
+@keyframes sp{to{transform:rotate(360deg);}}
+.status.ok{color:var(--ok);} .status.err{color:var(--err);}
+.queue{margin-top:14px;}
+.qitem{display:flex;align-items:center;gap:9px;font-size:13px;padding:7px 0;border-top:1px solid #f0f3f9;}
+.qitem .dotc{width:9px;height:9px;border-radius:50%;flex:none;}
+.qitem.done .dotc{background:var(--ok);} .qitem.work .dotc{background:var(--orange);}
+.qitem.fail .dotc{background:var(--err);} .qitem .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.clients .ccard{display:flex;align-items:center;gap:13px;border:1px solid var(--line);border-radius:11px;
+padding:11px 13px;margin-bottom:9px;cursor:pointer;transition:.1s;}
+.clients .ccard:hover{box-shadow:0 6px 16px rgba(20,40,90,.1);transform:translateY(-1px);}
+.cav{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--navy),var(--blue));
+color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;flex:none;}
+.cinfo{flex:1;min-width:0;} .cname{font-weight:700;color:var(--navy);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.csub{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.chip{font-size:11px;font-weight:600;color:var(--blue);background:#eef3fb;padding:3px 9px;border-radius:20px;flex:none;}
+.btn{display:inline-block;background:var(--blue);color:#fff;border:none;border-radius:9px;
+padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;}
+.btn.ghost{background:#eef3fb;color:var(--blue);}
+.btnrow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.empty{color:var(--muted);font-size:13px;text-align:center;padding:18px 0;}
+
+/* ---- Vista (rendered client page) ---- */
+#vista{display:none;}
+.vhero{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;border-radius:14px 14px 0 0;
+padding:22px;display:flex;align-items:center;gap:16px;}
+.vhero .avatar{width:56px;height:56px;border-radius:13px;background:rgba(255,255,255,.16);
+display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;border:1px solid rgba(255,255,255,.25);}
+.vhero h1{margin:0;font-size:23px;}
+.vhero .sub{color:#cfe0f7;font-size:13px;margin-top:2px;}
+.badge{display:inline-block;background:var(--orange);color:#fff;font-size:10px;font-weight:700;
+padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;}
+.vflags{margin-left:auto;text-align:right;}
+.vflag{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);
+font-size:11px;padding:3px 9px;border-radius:6px;margin:2px 0 2px 6px;}
+.vbody{background:var(--card);border:1px solid var(--line);border-top:none;border-radius:0 0 14px 14px;padding:20px;}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+@media(max-width:680px){.kpis{grid-template-columns:1fr 1fr;}}
+.kpi{background:#fafbfe;border:1px solid var(--line);border-radius:11px;padding:12px 14px;}
+.kpi .k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.kpi .v{font-size:16px;font-weight:700;margin-top:3px;word-break:break-word;}
+.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:680px){.vgrid{grid-template-columns:1fr;}}
+.vcard{border:1px solid var(--line);border-radius:11px;overflow:hidden;}
+.vcard h3{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--navy);
+padding:11px 15px;border-bottom:1px solid var(--line);background:#fafbfe;display:flex;align-items:center;gap:7px;}
+.vcard h3 .dot{width:7px;height:7px;border-radius:50%;background:var(--orange);}
+.vcard .vb{padding:4px 15px 11px;}
+.vrow{display:flex;padding:7px 0;border-bottom:1px solid #f0f3f9;gap:10px;}
+.vrow:last-child{border-bottom:none;}
+.vrow .l{flex:0 0 42%;color:var(--muted);font-size:13px;}
+.vrow .r{flex:1;font-weight:600;font-size:14px;word-break:break-word;}
+.vfull{grid-column:1/-1;}
+table{width:100%;border-collapse:collapse;font-size:14px;}
+th{background:var(--navy);color:#fff;text-align:left;padding:8px 11px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;}
+td{padding:8px 11px;border-bottom:1px solid var(--line);}
+</style>
+</head>
+<body>
+<div class="topbar"><span class="logo">Pay<span class="o">Comp</span></span>
+<span class="tag">Intake Console</span></div>
+
+<div class="wrap">
+  <div class="cols">
+    <!-- LEFT: dropbox + settings + queue + clients -->
+    <div>
+      <div class="panel">
+        <h2>Dropbox</h2>
+        <div id="drop" class="drop">
+          <div class="ic">📄⬇️</div>
+          <div class="big">Drop intake PDF here</div>
+          <div class="sm">or click to choose a file — Claude reads it and builds the client</div>
+        </div>
+        <input id="file" type="file" accept="application/pdf" multiple style="display:none">
+        <div id="status" class="status"></div>
+        <div id="queue" class="queue"></div>
+      </div>
+
+      <div class="panel" style="margin-top:16px;">
+        <h2>Connection</h2>
+        <label>Anthropic API key</label>
+        <input id="key" type="password" placeholder="sk-ant-...">
+        <label>Model</label>
+        <input id="model" type="text" value="claude-sonnet-4-6">
+        <div class="hint">Key is stored only in this browser (localStorage) and sent directly to api.anthropic.com.</div>
+      </div>
+
+      <div class="panel clients" style="margin-top:16px;">
+        <h2>Clients</h2>
+        <div id="clientList"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: rendered vista -->
+    <div>
+      <div id="welcome" class="panel">
+        <h2>Client Vista</h2>
+        <div class="empty">Drop a PayComp intake form on the left.<br>
+          The parsed client view will appear here.</div>
+      </div>
+      <div id="vista"></div>
+      <div id="vistaActions" class="btnrow" style="display:none;">
+        <button class="btn" id="dlHtml">Download vista (HTML)</button>
+        <button class="btn ghost" id="dlJson">Download data (JSON)</button>
+        <button class="btn ghost" id="rawBtn">View raw fields</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const store = {
+  get k(){return localStorage.getItem('pc_key')||'';},
+  set k(v){localStorage.setItem('pc_key',v);},
+  get m(){return localStorage.getItem('pc_model')||'claude-sonnet-4-6';},
+  set m(v){localStorage.setItem('pc_model',v);},
+  get clients(){try{return JSON.parse(localStorage.getItem('pc_clients')||'[]');}catch(e){return [];}},
+  set clients(v){localStorage.setItem('pc_clients',JSON.stringify(v));}
+};
+$('#key').value = store.k; $('#model').value = store.m;
+$('#key').onchange = e => store.k = e.target.value.trim();
+$('#model').onchange = e => store.m = e.target.value.trim();
+
+// ---- field schema sent to Claude (forced via tool_use) ----
+const TOOL = {
+  name: "save_client",
+  description: "Save the structured data extracted from a PayComp client intake form.",
+  input_schema: {
+    type: "object",
+    properties: {
+      legal_business_name:{type:"string"}, dba:{type:"string"}, fein:{type:"string"},
+      business_address:{type:"string"}, city:{type:"string"}, state:{type:"string"}, zip:{type:"string"},
+      contact_name:{type:"string"}, contact_email:{type:"string"}, contact_phone:{type:"string"},
+      wc_carrier:{type:"string"}, policy_number:{type:"string"}, policy_effective_date:{type:"string"},
+      multiple_locations:{type:"boolean"}, multiple_feins:{type:"boolean"}, multiple_payroll_providers:{type:"boolean"},
+      agency_name:{type:"string"}, producer_name:{type:"string"}, agency_email:{type:"string"}, agency_phone:{type:"string"},
+      wholesaler_name:{type:"string"}, wholesaler_contact:{type:"string"}, wholesaler_email:{type:"string"}, wholesaler_phone:{type:"string"},
+      payroll_processor:{type:"string",enum:["Payroll Company","CPA/Bookkeeper","In-House Payroll","Other",""]},
+      provider_name:{type:"string"}, provider_contact:{type:"string"}, provider_email:{type:"string"}, provider_phone:{type:"string"},
+      payroll_frequency:{type:"string",enum:["Weekly","Bi-Weekly","Semi-Monthly","Monthly",""]},
+      payroll_day:{type:"string",description:"Selected weekday for weekly/bi-weekly, or the day/dates for semi-monthly/monthly"},
+      next_check_date:{type:"string"},
+      no_excluded_employees:{type:"boolean"},
+      excluded_employees:{type:"array",items:{type:"object",properties:{
+        name:{type:"string"},employee_id:{type:"string"},reason:{type:"string"}}}},
+      integration_ack:{type:"boolean"},
+      sched_contact:{type:"string"}, sched_phone:{type:"string"}, sched_email:{type:"string"}, sched_times:{type:"string"},
+      authorized_signature:{type:"string"}, printed_name:{type:"string"}, title:{type:"string"}, signature_date:{type:"string"},
+      authority_confirmed:{type:"boolean"}
+    },
+    required:["legal_business_name"]
+  }
+};
+const PROMPT = `You are processing a PayComp "Client Intake Form" PDF. Extract every field into the save_client tool.
+Rules:
+- Use the value exactly as written. For blank fields or "N/A", return an empty string.
+- For checkboxes, return the booleans / the selected option that is marked with an X.
+- Split the City/State/Zip line into city, state (2-letter), zip.
+- payroll_frequency is the single selected frequency; payroll_day is the checked weekday (or dates for semi-monthly/monthly).
+- excluded_employees: one object per listed person. If "No excluded employees" is checked, set no_excluded_employees true and return an empty array.
+Call the save_client tool once with all fields.`;
+
+function fileToB64(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>res(r.result.split(',')[1]);
+    r.onerror=rej; r.readAsDataURL(file);
+  });
+}
+
+async function callClaude(b64){
+  const key=store.k, model=store.m;
+  if(!key) throw new Error("Enter your Anthropic API key first.");
+  const res = await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{
+      "content-type":"application/json",
+      "x-api-key":key,
+      "anthropic-version":"2023-06-01",
+      "anthropic-dangerous-direct-browser-access":"true"
+    },
+    body:JSON.stringify({
+      model, max_tokens:2000, tools:[TOOL], tool_choice:{type:"tool",name:"save_client"},
+      messages:[{role:"user",content:[
+        {type:"document",source:{type:"base64",media_type:"application/pdf",data:b64}},
+        {type:"text",text:PROMPT}
+      ]}]
+    })
+  });
+  const j = await res.json();
+  if(!res.ok) throw new Error((j.error&&j.error.message)||("API error "+res.status));
+  const tu = (j.content||[]).find(c=>c.type==="tool_use");
+  if(!tu) throw new Error("Claude did not return structured data.");
+  return tu.input;
+}
+
+// ---------- rendering ----------
+const esc=v=>v==null?"":String(v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const dash=v=>v?esc(v):'<span class="muted">—</span>';
+const initials=n=>((n||"").split(/\s+/).filter(w=>/[a-z]/i.test(w[0]||"")).slice(0,2).map(w=>w[0]).join("")||"C").toUpperCase();
+const vrow=(l,v)=>`<div class="vrow"><div class="l">${esc(l)}</div><div class="r">${dash(v)}</div></div>`;
+const vcard=(t,rows,full)=>`<div class="vcard${full?' vfull':''}"><h3><span class="dot"></span>${esc(t)}</h3><div class="vb">${rows}</div></div>`;
+
+function vistaHTML(d){
+  const name=d.legal_business_name||"Unnamed Client";
+  const freq=d.payroll_frequency||"", day=d.payroll_day||"";
+  const freqDisp=freq?(day?`${freq} (${day})`:freq):"";
+  const flags=[];
+  if(d.multiple_locations)flags.push("Multiple Locations");
+  if(d.multiple_feins)flags.push("Multiple FEINs");
+  if(d.multiple_payroll_providers)flags.push("Multiple Payroll Providers");
+  const flagsH=flags.map(f=>`<span class="vflag">⚠ ${esc(f)}</span>`).join("");
+  const addr=[d.business_address,[d.city,d.state,d.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+
+  const cards=[
+    vcard("Business & Policy",[vrow("Legal name",name),vrow("DBA",d.dba),vrow("FEIN",d.fein),vrow("Address",addr)].join("")),
+    vcard("Primary Contact",[vrow("Name",d.contact_name),vrow("Email",d.contact_email),vrow("Phone",d.contact_phone)].join("")),
+    vcard("Workers' Comp Policy",[vrow("Carrier",d.wc_carrier),vrow("Policy number",d.policy_number),vrow("Effective date",d.policy_effective_date)].join("")),
+    vcard("Payroll Schedule",[vrow("Frequency",freqDisp),vrow("Next check date",d.next_check_date),vrow("Processed by",d.payroll_processor)].join("")),
+    vcard("Agency",[vrow("Agency name",d.agency_name),vrow("Producer",d.producer_name),vrow("Email",d.agency_email),vrow("Phone",d.agency_phone)].join("")),
+    vcard("Payroll Provider",[vrow("Provider",d.provider_name),vrow("Contact",d.provider_contact),vrow("Email",d.provider_email),vrow("Phone",d.provider_phone)].join(""))
+  ];
+  if(d.wholesaler_name||d.wholesaler_contact||d.wholesaler_email||d.wholesaler_phone)
+    cards.push(vcard("Wholesaler / MGA",[vrow("Name",d.wholesaler_name),vrow("Contact",d.wholesaler_contact),vrow("Email",d.wholesaler_email),vrow("Phone",d.wholesaler_phone)].join("")));
+  cards.push(vcard("Scheduling & Onboarding",[vrow("Best contact",d.sched_contact),vrow("Phone",d.sched_phone),vrow("Email",d.sched_email),vrow("Best times",d.sched_times),vrow("Integration ack.",d.integration_ack?"Yes":"No")].join("")));
+  cards.push(vcard("Authorization",[vrow("Signature",d.authorized_signature),vrow("Printed name",d.printed_name),vrow("Title",d.title),vrow("Date",d.signature_date),vrow("Authority confirmed",d.authority_confirmed?"Yes":"No")].join("")));
+
+  let excl;
+  const ee=d.excluded_employees||[];
+  if(d.no_excluded_employees) excl='<p class="muted">No excluded employees.</p>';
+  else if(ee.length) excl=`<table><tr><th>Name</th><th>Employee ID</th><th>Reason</th></tr>`+
+    ee.map(e=>`<tr><td>${esc(e.name)}</td><td>${esc(e.employee_id)}</td><td>${esc(e.reason)}</td></tr>`).join("")+`</table>`;
+  else excl='<p class="muted">None listed.</p>';
+  cards.push(vcard("Excluded Employees / Officers",excl,true));
+
+  return `<div class="vhero">
+    <div class="avatar">${initials(name)}</div>
+    <div><span class="badge">Active Client</span>
+      <h1>${esc(name)}</h1>
+      <div class="sub">${d.dba?esc(d.dba)+" • ":""}FEIN ${esc(d.fein)||"—"}</div></div>
+    <div class="vflags">${flagsH}</div>
+  </div>
+  <div class="vbody">
+    <div class="kpis">
+      <div class="kpi"><div class="k">Frequency</div><div class="v">${dash(freqDisp)}</div></div>
+      <div class="kpi"><div class="k">Next Check</div><div class="v">${dash(d.next_check_date)}</div></div>
+      <div class="kpi"><div class="k">Provider</div><div class="v">${dash(d.provider_name)}</div></div>
+      <div class="kpi"><div class="k">WC Carrier</div><div class="v">${dash(d.wc_carrier)}</div></div>
+    </div>
+    <div class="vgrid">${cards.join("")}</div>
+  </div>`;
+}
+
+let current=null;
+function showVista(d){
+  current=d;
+  $('#welcome').style.display='none';
+  $('#vista').style.display='block';
+  $('#vista').innerHTML=vistaHTML(d);
+  $('#vistaActions').style.display='flex';
+}
+
+function renderClients(){
+  const list=store.clients;
+  const el=$('#clientList');
+  if(!list.length){el.innerHTML='<div class="empty">No clients yet.</div>';return;}
+  el.innerHTML=list.map((c,i)=>`
+    <div class="ccard" data-i="${i}">
+      <div class="cav">${initials(c.legal_business_name)}</div>
+      <div class="cinfo"><div class="cname">${esc(c.legal_business_name||"Unnamed")}</div>
+        <div class="csub">${esc([c.city&&c.city+", "+(c.state||""),c.provider_name].filter(Boolean).join(" • "))||"—"}</div></div>
+      <div class="chip">${esc(c.payroll_frequency)||"—"}</div>
+    </div>`).join("");
+  el.querySelectorAll('.ccard').forEach(n=>n.onclick=()=>showVista(store.clients[+n.dataset.i]));
+}
+
+function saveClient(d){
+  const list=store.clients;
+  const i=list.findIndex(c=>(c.fein&&c.fein===d.fein)||c.legal_business_name===d.legal_business_name);
+  if(i>=0) list[i]=d; else list.unshift(d);
+  store.clients=list; renderClients();
+}
+
+// ---------- queue / processing ----------
+const qEl=$('#queue');
+function qAdd(name){const id='q'+Date.now()+Math.random().toString(36).slice(2,6);
+  qEl.insertAdjacentHTML('afterbegin',`<div class="qitem work" id="${id}"><span class="dotc"></span><span class="nm">${esc(name)}</span><span class="st">processing…</span></div>`);
+  return id;}
+function qSet(id,cls,txt){const n=document.getElementById(id);if(!n)return;n.className='qitem '+cls;n.querySelector('.st').textContent=txt;}
+
+function setStatus(txt,cls){$('#status').className='status '+(cls||'');$('#status').innerHTML=(cls==='work'?'<span class="spin"></span>':'')+esc(txt);}
+
+async function handleFiles(files){
+  const pdfs=[...files].filter(f=>f.type==="application/pdf"||f.name.toLowerCase().endsWith(".pdf"));
+  if(!pdfs.length){setStatus("Please drop a PDF file.","err");return;}
+  for(const f of pdfs){
+    const id=qAdd(f.name);
+    setStatus("Claude is reading "+f.name+"…","work");
+    try{
+      const b64=await fileToB64(f);
+      const data=await callClaude(b64);
+      data._source_pdf=f.name;
+      saveClient(data); showVista(data);
+      qSet(id,'done',(data.legal_business_name||'done'));
+      setStatus("✓ Created "+(data.legal_business_name||"client"),"ok");
+    }catch(e){
+      qSet(id,'fail','failed'); setStatus("Error: "+e.message,"err");
+    }
+  }
+}
+
+// drop zone wiring
+const drop=$('#drop');
+drop.onclick=()=>$('#file').click();
+$('#file').onchange=e=>handleFiles(e.target.files);
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
+drop.addEventListener('drop',e=>handleFiles(e.dataTransfer.files));
+// allow dropping anywhere on the page
+['dragover','drop'].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault()));
+
+// actions
+function download(name,content,type){const b=new Blob([content],{type});const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download=name;a.click();}
+$('#dlHtml').onclick=()=>{if(!current)return;
+  const doc=`<!DOCTYPE html><meta charset="utf-8"><title>${esc(current.legal_business_name||'Client')}</title>`+
+    `<style>${document.querySelector('style').textContent}</style><div class="wrap"><div id="v">`+vistaHTML(current)+`</div></div>`;
+  download((current.legal_business_name||'client').replace(/[^a-z0-9]+/gi,'-')+'.html',doc,'text/html');};
+$('#dlJson').onclick=()=>{if(!current)return;
+  download((current.legal_business_name||'client').replace(/[^a-z0-9]+/gi,'-')+'.json',JSON.stringify(current,null,2),'application/json');};
+$('#rawBtn').onclick=()=>{if(!current)return;alert(JSON.stringify(current,null,2));};
+
+renderClients();
+</script>
+</body>
+</html>
